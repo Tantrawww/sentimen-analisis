@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GadgetSense — Analisis Sentimen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Tambahan styling khusus untuk tombol hapus riwayat */
+        .hist-item {
+            position: relative;
+        }
+
+        .delete-hist-btn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: rgba(255, 59, 48, 0.1);
+            color: #ff3b30;
+            border: 1px solid rgba(255, 59, 48, 0.2);
+            border-radius: 6px;
+            padding: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .delete-hist-btn:hover {
+            background: #ff3b30;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="history-overlay" id="histOverlay" onclick="toggleHistory()"></div>
+    <div class="history-panel" id="histPanel">
+        <div class="history-header">
+            <h2 id="ui-hist-title">Riwayat Analisis</h2>
+            <button class="close-btn" onclick="toggleHistory()">&times;</button>
+        </div>
+        <div id="historyList"></div>
+    </div>
+
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-grid"></div>
+
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="brand-icon">G</div>
+            <span>GadgetSense</span>
+        </div>
+        <div class="nav-controls">
+            <button class="icon-btn" onclick="toggleLang()" id="langBtn">
+                <span class="btn-flag">🇮🇩</span> ID
+            </button>
+            <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+            <button class="icon-btn hist-btn" onclick="toggleHistory()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span id="ui-btn-hist">Riwayat</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+
+        <div class="hero">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Model SVM · NLP Bahasa Indonesia
+            </div>
+            <h1 id="ui-hero-title">Analisis Sentimen<br><em>Ulasan Gadget</em></h1>
+            <p id="ui-hero-sub">Sistem berbasis Support Vector Machine dengan deteksi sarkasme, normalisasi slang, dan
+                pemecah multi-klausa secara otomatis.</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Masukkan Ulasan
+            </div>
+            <div class="textarea-wrap">
+                <textarea id="komentar"
+                    placeholder="Contoh: kamera hp ini bagus banget tapi baterainya boros, harganya juga kemahalan..."></textarea>
+                <div class="textarea-hint" id="charCount">0 karakter</div>
+            </div>
+        </div>
+
+        <div id="loading" class="loader-container">
+            <div class="loader-track">
+                <div class="loader-bar"></div>
+            </div>
+            <div id="ui-loading">Menganalisis ulasan...</div>
+        </div>
+
+        <div id="metrics" class="metrics-grid">
+            <div class="metric-box metric-total">
+                <div class="metric-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                </div>
+                <div class="metric-info">
+                    <span class="metric-label" id="ui-met-1">Total Klausa</span>
+                    <span class="metric-value" id="count-total">0</span>
+                </div>
+            </div>
+            <div class="metric-box metric-pos">
+                <div class="metric-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
+                        <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+                    </svg>
+                </div>
+                <div class="metric-info">
+                    <span class="metric-label" id="ui-met-2">Opini Positif</span>
+                    <span class="metric-value" id="count-pos">0</span>
+                </div>
+            </div>
+            <div class="metric-box metric-neg">
+                <div class="metric-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z" />
+                        <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
+                    </svg>
+                </div>
+                <div class="metric-info">
+                    <span class="metric-label" id="ui-met-3">Opini Negatif</span>
+                    <span class="metric-value" id="count-neg">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsContainer"></div>
+
+        <div id="blackboxContainer" class="terminal-box">
+            <div class="terminal-header">
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+                <div class="terminal-title">svm_engine_blackbox.exe</div>
+                <div class="terminal-tag">DEBUG</div>
+            </div>
+            <div class="terminal-body" id="bb-content"></div>
+        </div>
+
+        <footer class="footer">
+            Sistem Analisis Sentimen Gadget &mdash; Berbasis SVM &amp; NLP Bahasa Indonesia
+        </footer>
+    </div>
+
+    <script>
+        let currentLang = 'id';
+        const dict = {
+            id: {
+                hero_title: "Analisis Sentimen<br><em>Ulasan Gadget</em>",
+                hero_sub: "Sistem berbasis Support Vector Machine dengan deteksi sarkasme, normalisasi slang, dan pemecah multi-klausa secara otomatis.",
+                placeholder: "Contoh: kamera hp ini bagus banget tapi baterainya boros, harganya juga kemahalan...",
+                btn_hist: "Riwayat", hist_title: "Riwayat Analisis",
+                loading: "Menganalisis ulasan...",
+                met_1: "Total Klausa", met_2: "Opini Positif", met_3: "Opini Negatif",
+                aspek: "Aspek", sentimen: "Sentimen", empty_hist: "Belum ada riwayat analisis.",
+                keyakinan: "Keyakinan AI", karakter: "karakter",
+                del_confirm: "Apakah Anda yakin ingin menghapus riwayat analisis ini?"
+            },
+            en: {
+                hero_title: "Sentiment Analysis<br><em>Gadget Reviews</em>",
+                hero_sub: "SVM-based system with sarcasm detection, slang normalization, and automatic multi-clause parsing.",
+                placeholder: "Example: the camera is great but battery drains fast, also quite overpriced...",
+                btn_hist: "History", hist_title: "Analysis History",
+                loading: "Analyzing review...",
+                met_1: "Total Clauses", met_2: "Positive Opinions", met_3: "Negative Opinions",
+                aspek: "Aspect", sentimen: "Sentiment", empty_hist: "No history yet.",
+                keyakinan: "AI Confidence", karakter: "characters",
+                del_confirm: "Are you sure you want to delete this analysis history?"
+            }
+        };
+
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeBtn');
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                btn.innerText = '🌙';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                btn.innerText = '☀️';
+            }
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'id' ? 'en' : 'id';
+            document.getElementById('langBtn').innerHTML = currentLang === 'id'
+                ? '<span class="btn-flag">🇮🇩</span> ID'
+                : '<span class="btn-flag">🇬🇧</span> EN';
+            document.getElementById('ui-hero-title').innerHTML = dict[currentLang].hero_title;
+            document.getElementById('ui-hero-sub').innerText = dict[currentLang].hero_sub;
+            document.getElementById('komentar').placeholder = dict[currentLang].placeholder;
+            document.getElementById('ui-btn-hist').innerText = dict[currentLang].btn_hist;
+            document.getElementById('ui-hist-title').innerText = dict[currentLang].hist_title;
+            document.getElementById('ui-loading').innerText = dict[currentLang].loading;
+            document.getElementById('ui-met-1').innerText = dict[currentLang].met_1;
+            document.getElementById('ui-met-2').innerText = dict[currentLang].met_2;
+            document.getElementById('ui-met-3').innerText = dict[currentLang].met_3;
+            updateCharCount();
+            renderHistory();
+        }
+
+        function toggleHistory() {
+            document.getElementById('histPanel').classList.toggle('active');
+            document.getElementById('histOverlay').style.display =
+                document.getElementById('histPanel').classList.contains('active') ? 'block' : 'none';
+            renderHistory();
+        }
+
+        function saveToHistory(rawText, resultsObj, blackboxObj) {
+            let hist = JSON.parse(localStorage.getItem('sentimentHistory') || '[]');
+            if (hist.length > 0 && hist[0].text === rawText) return;
+            hist.unshift({ text: rawText, results: resultsObj, blackbox: blackboxObj, time: new Date().toLocaleString() });
+            if (hist.length > 20) hist.pop();
+            localStorage.setItem('sentimentHistory', JSON.stringify(hist));
+        }
+
+        // FUNGSI BARU: Menghapus Riwayat
+        function deleteHistory(index, event) {
+            // Mencegah klik tombol hapus memicu loadFromHistory (event bubbling)
+            event.stopPropagation();
+
+            if (confirm(dict[currentLang].del_confirm)) {
+                let hist = JSON.parse(localStorage.getItem('sentimentHistory') || '[]');
+                hist.splice(index, 1); // Potong 1 elemen di index tersebut
+                localStorage.setItem('sentimentHistory', JSON.stringify(hist));
+                renderHistory(); // Refresh tampilan riwayat
+            }
+        }
+
+        // FUNGSI MODIFIKASI: Menambahkan tombol Delete pada render
+        function renderHistory() {
+            let hist = JSON.parse(localStorage.getItem('sentimentHistory') || '[]');
+            const container = document.getElementById('historyList');
+            if (hist.length === 0) {
+                container.innerHTML = `<div class="hist-empty">${dict[currentLang].empty_hist}</div>`;
+                return;
+            }
+            container.innerHTML = hist.map((item, index) => {
+                // Hitung total semua klausa dari semua ulasan untuk badges
+                let pos = 0; let neg = 0; let totalKlausa = 0;
+                if (item.results) {
+                    item.results.forEach(r => {
+                        if (r.clauses) {
+                            pos += r.clauses.filter(i => i.sentimen === 'Positif').length;
+                            neg += r.clauses.filter(i => i.sentimen === 'Negatif').length;
+                            totalKlausa += r.clauses.length;
+                        }
+                    });
+                }
+
+                return `
+                <div class="hist-item" onclick="loadFromHistory(${index})">
+                    <div class="hist-date">${item.time}</div>
+                    <div class="hist-text" style="padding-right: 30px;">"${item.text}"</div>
+                    <div class="hist-pills">
+                        <span class="hist-pill pill-pos">+${pos}</span>
+                        <span class="hist-pill pill-neg">-${neg}</span>
+                        <span class="hist-pill pill-total">${totalKlausa} klausa</span>
+                    </div>
+                    <button class="delete-hist-btn" onclick="deleteHistory(${index}, event)" title="Hapus Riwayat">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        function loadFromHistory(index) {
+            let hist = JSON.parse(localStorage.getItem('sentimentHistory') || '[]');
+            const item = hist[index];
+            document.getElementById('komentar').value = item.text;
+            updateCharCount();
+            renderResults(item.results, item.blackbox);
+            toggleHistory();
+        }
+
+        function updateCharCount() {
+            const len = document.getElementById('komentar').value.length;
+            document.getElementById('charCount').innerText = `${len} ${dict[currentLang].karakter}`;
+        }
+
+        let typingTimer;
+        const inputArea = document.getElementById('komentar');
+        const resultsDiv = document.getElementById('resultsContainer');
+        const metricsDiv = document.getElementById('metrics');
+        const blackboxDiv = document.getElementById('blackboxContainer');
+
+        inputArea.addEventListener('input', () => {
+            updateCharCount();
+        });
+
+        inputArea.addEventListener('keyup', () => {
+            clearTimeout(typingTimer);
+            if (inputArea.value.trim()) {
+                document.getElementById('loading').style.display = 'block';
+                resultsDiv.innerHTML = '';
+                metricsDiv.style.display = 'none';
+                blackboxDiv.style.display = 'none';
+                typingTimer = setTimeout(fetchPrediction, 1200);
+            } else {
+                resultsDiv.innerHTML = '';
+                metricsDiv.style.display = 'none';
+                blackboxDiv.style.display = 'none';
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        inputArea.addEventListener('keydown', () => clearTimeout(typingTimer));
+
+        async function fetchPrediction() {
+            const text = inputArea.value;
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ komentar: text })
+                });
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+                if (data.error) { alert(data.error); return; }
+                if (data.results.length > 0) {
+                    renderResults(data.results, data.blackbox);
+                    saveToHistory(text, data.results, data.blackbox);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function renderResults(reviewsArray, blackboxObj) {
+            // Hitung total semua klausa dari semua ulasan
+            const allClauses = reviewsArray.flatMap(r => r.clauses);
+            document.getElementById('count-total').innerText = allClauses.length;
+            document.getElementById('count-pos').innerText = allClauses.filter(i => i.sentimen === 'Positif').length;
+            document.getElementById('count-neg').innerText = allClauses.filter(i => i.sentimen === 'Negatif').length;
+            metricsDiv.style.display = 'grid';
+
+            resultsDiv.innerHTML = '';
+
+            reviewsArray.forEach((review) => {
+                // Jika multi ulasan, tampilkan header pemisah
+                if (review.mode === 'multi') {
+                    resultsDiv.innerHTML += `
+                        <div class="review-group-header">
+                            <span class="review-group-num">Ulasan #${review.review_index}</span>
+                            <span class="review-group-text">"${review.review_text.substring(0, 80)}${review.review_text.length > 80 ? '...' : ''}"</span>
+                        </div>`;
+                }
+
+                // Render tiap klausa dalam ulasan ini
+                review.clauses.forEach((item, idx) => {
+                    let colorClass = 'b-netral', icon = '➖', borderAccent = 'border-netral';
+                    let displaySentimen = item.sentimen;
+
+                    if (currentLang === 'en') {
+                        if (item.sentimen === 'Positif') displaySentimen = 'Positive';
+                        else if (item.sentimen === 'Negatif') displaySentimen = 'Negative';
+                        else if (item.sentimen === 'Netral') displaySentimen = 'Neutral';
+                        else if (item.sentimen === 'Ambigu') displaySentimen = 'Ambiguous';
+                    }
+
+                    if (item.sentimen === 'Positif') { colorClass = 'b-positif'; icon = '↑'; borderAccent = 'border-positif'; }
+                    else if (item.sentimen === 'Negatif') { colorClass = 'b-negatif'; icon = '↓'; borderAccent = 'border-negatif'; }
+                    else if (item.sentimen === 'Ambigu') { colorClass = 'b-ambigu'; icon = '~'; borderAccent = 'border-ambigu'; }
+
+                    const conf = parseFloat(item.confidence);
+                    const confColor = conf >= 80 ? 'conf-high' : conf >= 60 ? 'conf-mid' : 'conf-low';
+                    const globalIdx = reviewsArray.slice(0, review.review_index - 1).reduce((s, r) => s + r.clauses.length, 0) + idx + 1;
+
+                    resultsDiv.innerHTML += `
+                    <div class="result-item ${borderAccent}" style="animation-delay:${(globalIdx - 1) * 0.08}s">
+                        <div class="result-header">
+                            <span class="result-num">#${globalIdx}</span>
+                            <div class="result-text">"${item.klausa}"</div>
+                        </div>
+                        <div class="result-footer">
+                            <div class="result-badges">
+                                <span class="badge b-aspek">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                    ${dict[currentLang].aspek}: <strong>${item.aspek}</strong>
+                                </span>
+                                <span class="badge ${colorClass}">
+                                    <span class="sent-icon">${icon}</span>
+                                    ${dict[currentLang].sentimen}: <strong>${displaySentimen}</strong>
+                                </span>
+                            </div>
+                            <div class="conf-wrap">
+                                <span class="conf-label ${confColor}">${dict[currentLang].keyakinan}</span>
+                                <div class="conf-bar-track">
+                                    <div class="conf-bar-fill ${confColor}" style="width:${conf}%"></div>
+                                </div>
+                                <span class="conf-val ${confColor}">${conf}%</span>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            });
+
+            // Blackbox
+            let bbText = `<span class="key">[INPUT RAW]</span>: <span class="string">"${blackboxObj.teks_asli}"</span>\n`;
+            bbText += `<span class="key">[MODE]</span>: <span class="num">${blackboxObj.mode_deteksi.toUpperCase()} — ${blackboxObj.jumlah_ulasan} ulasan terdeteksi</span>\n`;
+            bbText += `<span class="key">[SPLIT]</span>: <span class="num">${JSON.stringify(blackboxObj.hasil_split)}</span>\n\n`;
+            bbText += `<span class="key">--- PREPROCESSING PIPELINE ---</span>\n`;
+            reviewsArray.forEach((review) => {
+                if (review.mode === 'multi') bbText += `<span class="dim">[ Ulasan #${review.review_index} ]</span>\n`;
+                review.clauses.forEach((item, idx) => {
+                    bbText += `<span class="dim">[Klausa ${idx + 1}]</span> => <span class="string">"${item.teks_bersih}"</span>\n`;
+                });
+            });
+            document.getElementById('bb-content').innerHTML = bbText;
+            blackboxDiv.style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>
