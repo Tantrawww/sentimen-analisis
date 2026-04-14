@@ -344,6 +344,190 @@ body {
     margin-bottom: 2rem;
 }
 
+/* YOUTUBE SECTION */
+.yt-section {
+    margin-bottom: 2rem;
+}
+
+.yt-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+.yt-url-wrap {
+    flex: 1;
+    min-width: 200px;
+    border-radius: 14px;
+}
+
+.yt-url-wrap input {
+    width: 100%;
+    padding: 0.9rem 1.1rem;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    outline: none;
+}
+
+.yt-select {
+    padding: 0 1rem;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text-main);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.yt-btn {
+    padding: 0 1.5rem;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+
+.yt-btn:hover {
+    opacity: 0.85;
+}
+
+.yt-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.yt-sum-card {
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+}
+
+.yt-sum-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.yt-sum-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.yt-pos .yt-sum-val {
+    color: var(--positif-accent);
+}
+
+.yt-neg .yt-sum-val {
+    color: var(--negatif-accent);
+}
+
+.yt-net .yt-sum-val {
+    color: var(--netral-accent);
+}
+
+.yt-charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.yt-chart-card {
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+}
+
+.yt-chart-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.yt-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.yt-detail-header span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.yt-toggle-btn {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.yt-toggle-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.yt-comment-item {
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 8px;
+}
+
+.yt-comment-text {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+    .yt-charts-row {
+        grid-template-columns: 1fr;
+    }
+
+    .yt-input-row {
+        flex-direction: column;
+    }
+
+    .yt-btn {
+        width: 100%;
+        padding: 0.85rem;
+        text-align: center;
+    }
+}
+
 .input-label {
     display: flex;
     align-items: center;
