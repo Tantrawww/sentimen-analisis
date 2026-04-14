@@ -2,12 +2,14 @@ from flask import Flask, request, jsonify, render_template
 import pandas as pd
 import joblib
 import re
-import os
 import string
+import os
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
+from googleapiclient.discovery import build
 
 app = Flask(__name__)
+YOUTUBE_API_KEY = 'AIzaSyAMMIUL6xcItmA8aIhIKNlRguUx9LJKIHY'
 
 print("[INFO] Memuat Sistem dan Model NLP...")
 
@@ -247,8 +249,137 @@ def predict():
         }
     })
 
+# =====================================================================
+# FUNGSI YOUTUBE
+# =====================================================================
+def get_video_id(url):
+    """Ekstrak video ID dari berbagai format URL YouTube."""
+    patterns = [
+        r'(?:v=|\/)([0-9A-Za-z_-]{11})',
+        r'(?:youtu\.be\/)([0-9A-Za-z_-]{11})',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+def get_youtube_comments(video_id, max_comments=100):
+    """Ambil komentar dari YouTube API, maksimal max_comments komentar."""
+    try:
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        comments = []
+        next_page_token = None
+
+        while len(comments) < max_comments:
+            request = youtube.commentThreads().list(
+                part='snippet',
+                videoId=video_id,
+                maxResults=min(100, max_comments - len(comments)),
+                pageToken=next_page_token,
+                textFormat='plainText'
+            )
+            response = request.execute()
+
+            for item in response.get('items', []):
+                comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
+                comments.append(comment)
+
+            next_page_token = response.get('nextPageToken')
+            if not next_page_token:
+                break
+
+        return comments
+    except Exception as e:
+        return {'error': str(e)}
+
+
+@app.route('/analyze_youtube', methods=['POST'])
+def analyze_youtube():
+    if not model_ready:
+        return jsonify({'error': 'Model belum siap.'}), 500
+
+    data = request.get_json()
+    youtube_url = data.get('url', '')
+    max_comments = int(data.get('max_comments', 50))
+
+    # Ekstrak video ID
+    video_id = get_video_id(youtube_url)
+    if not video_id:
+        return jsonify({'error': 'URL YouTube tidak valid.'}), 400
+
+    # Ambil komentar
+    comments = get_youtube_comments(video_id, max_comments)
+    if isinstance(comments, dict) and 'error' in comments:
+        return jsonify({'error': f"Gagal mengambil komentar: {comments['error']}"}), 500
+
+    if not comments:
+        return jsonify({'error': 'Tidak ada komentar ditemukan.'}), 404
+
+    # Analisis tiap komentar
+    hasil_semua = []
+    ringkasan_sentimen = {'Positif': 0, 'Negatif': 0, 'Netral': 0, 'Ambigu': 0}
+    ringkasan_aspek = {'Kamera': 0, 'Baterai': 0, 'Harga': 0, 'Desain': 0, 'Lainnya': 0}
+
+    for komentar in comments:
+        clauses = split_into_clauses(komentar)
+        hasil_komentar = []
+
+        for clause in clauses:
+            cleaned = clean_text(clause)
+            if not cleaned.strip():
+                continue
+
+            vec_text = vectorizer.transform([cleaned])
+            pred_aspek = svm_aspek.predict(vec_text)[0]
+
+            try:
+                prob = svm_sentimen.predict_proba(vec_text)[0]
+                max_prob = max(prob)
+                pred_sentimen = svm_sentimen.classes_[prob.argmax()]
+
+                if max_prob < 0.60:
+                    skor = lexicon_score(cleaned)
+                    if skor > 0: pred_sentimen = 'Positif'
+                    elif skor < 0: pred_sentimen = 'Negatif'
+                    else: pred_sentimen = 'Netral'
+
+                confidence = round(max_prob * 100, 2)
+            except AttributeError:
+                pred_sentimen = svm_sentimen.predict(vec_text)[0]
+                confidence = 100.0
+
+            # Update ringkasan
+            ringkasan_sentimen[pred_sentimen] = ringkasan_sentimen.get(pred_sentimen, 0) + 1
+            if pred_aspek in ringkasan_aspek:
+                ringkasan_aspek[pred_aspek] += 1
+            else:
+                ringkasan_aspek['Lainnya'] += 1
+
+            hasil_komentar.append({
+                'klausa': clause.capitalize(),
+                'aspek': pred_aspek,
+                'sentimen': pred_sentimen,
+                'confidence': confidence
+            })
+
+        if hasil_komentar:
+            hasil_semua.append({
+                'komentar_asli': komentar,
+                'hasil': hasil_komentar
+            })
+
+    total_klausa = sum(len(k['hasil']) for k in hasil_semua)
+
+    return jsonify({
+        'total_komentar': len(hasil_semua),
+        'total_klausa': total_klausa,
+        'ringkasan_sentimen': ringkasan_sentimen,
+        'ringkasan_aspek': ringkasan_aspek,
+        'detail': hasil_semua
+    })
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
     
