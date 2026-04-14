@@ -6,3 +6,4 @@ PySastrawi
 seaborn
 matplotlib
 gunicorn
+google-api-python-client
