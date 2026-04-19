@@ -38,7 +38,10 @@ slang_dict = {
     'cpt': 'cepat', 'lmot': 'lambat', 'lambt': 'lambat',
     'krn': 'karena', 'yg': 'yang', 'dgn': 'dengan', 'jernih': 'bagus', 'jelas': 'bagus',
     'mantap': 'bagus', 'jos': 'bagus', 'joss': 'bagus', 'top': 'bagus', 
-    'memuaskan': 'puas', 'oke': 'bagus', 'kece': 'bagus', 'nangis': 'sedih'
+    'memuaskan': 'puas', 'oke': 'bagus', 'kece': 'bagus', 'nangis': 'sedih',
+    'murahan': 'jelek', 'kemurahan': 'murah', 'harga murah': 'murah',
+    'kelas bawah': 'jelek', 'kelas rendah': 'jelek', 'hp murah': 'jelek',
+    'terkesan murah': 'jelek', 'kayak murah': 'jelek'
 }
 
 sarkas_dict = {}
@@ -72,6 +75,23 @@ except Exception as e:
 # =====================================================================
 def clean_text(text):
     text = str(text).lower()
+
+    # ✅ TAMBAHAN: normalisasi frasa kontekstual SEBELUM proses lainnya
+    frasa_negatif_konteks = [
+        ('kayak hp murah', 'jelek'),
+        ('kayak murah', 'jelek'),
+        ('terkesan murah', 'jelek'),
+        ('seperti murah', 'jelek'),
+        ('kelas bawah', 'jelek'),
+        ('kelas rendah', 'jelek'),
+        ('spek rendah', 'jelek'),
+        ('spesifikasi murahan', 'jelek'),
+        ('desain murahan', 'jelek'),
+        ('tidak premium', 'jelek'),
+        ('kurang premium', 'jelek'),
+    ]
+    for frasa, ganti in frasa_negatif_konteks:
+        text = text.replace(frasa, ganti)
     
     # 1. Sarkasme
     for frasa_asli, frasa_ganti in sarkas_dict.items():
@@ -158,7 +178,13 @@ lexicon_negatif = {
     'kecewa', 'zonk', 'sampah', 'payah', 'parah', 'butut', 'ampas',
     'boros', 'panas', 'overheat', 'retak', 'baret', 'lag', 'ngelag',
     'ancur', 'murahan', 'abal', 'kw', 'norak', 'bocor', 'jeblok',
-    'tidak_bagus', 'tidak_puas', 'kurang_bagus', 'tidak_keren'
+    'tidak_bagus', 'tidak_puas', 'kurang_bagus', 'tidak_keren',
+    'murahan', 'murahaan', 'kelas bawah', 'kelas rendah',
+    'terkesan murah', 'kayak murah', 'seperti murah',
+    'plastikan', 'ringkih', 'rapuh', 'goyang', 'kopong',
+    'tidak premium', 'kurang premium', 'tidak elegan',
+    'norak', 'kampungan', 'jadul', 'kuno', 'ketinggalan',
+    'spesifikasi rendah', 'spek rendah', 'spek jelek',
 }
 
 def lexicon_score(text_bersih):
